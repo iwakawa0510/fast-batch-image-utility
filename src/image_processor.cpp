@@ -17,6 +17,10 @@
 #include <fstream>
 #include <vector>
 
+#ifdef ENABLE_SIMD
+#include <immintrin.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace fbiu {
@@ -161,7 +165,15 @@ ImageData ImageProcessor::luma_to_alpha(const ImageData& input, uint8_t threshol
     output.channels = 4; // RGBA
     output.pixels.resize(rgba_input.width * rgba_input.height * 4);
     
-    for (int i = 0; i < pixel_count; ++i) {
+    int scalar_start_index = 0;
+
+#ifdef ENABLE_SIMD
+    // 将来的にここにSIMD実装を追加し、処理済みピクセル数を scalar_start_index に設定します
+    // scalar_start_index = (pixel_count / 8) * 8;
+    // ... SIMD loop ...
+#endif
+
+    for (int i = scalar_start_index; i < pixel_count; ++i) {
         uint8_t r = rgba_input.pixels[i * 4 + 0];
         uint8_t g = rgba_input.pixels[i * 4 + 1];
         uint8_t b = rgba_input.pixels[i * 4 + 2];
