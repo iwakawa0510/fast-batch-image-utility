@@ -90,7 +90,11 @@ def main():
     
     # Determine CLI executable name
     if sys.platform == "win32":
-        CLI_EXECUTABLE = BUILD_DIR / "fbiu_cli.exe"
+        # Check for Release folder (MSVC default)
+        if (BUILD_DIR / "Release" / "fbiu_cli.exe").exists():
+            CLI_EXECUTABLE = BUILD_DIR / "Release" / "fbiu_cli.exe"
+        else:
+            CLI_EXECUTABLE = BUILD_DIR / "fbiu_cli.exe"
     else:
         CLI_EXECUTABLE = BUILD_DIR / "fbiu_cli"
     
@@ -106,52 +110,47 @@ def main():
     print("Fast Batch Image Utility - Benchmark")
     print("=" * 60)
     
-    # Generate test images
-    image_count = 1000
-    image_size = (1000, 1000)
-    
-    print(f"\nTest configuration:")
-    print(f"  Image count: {image_count}")
-    print(f"  Image size: {image_size[0]}x{image_size[1]}")
-    
-    if not TEST_INPUT_DIR.exists() or len(list(TEST_INPUT_DIR.glob("*.png"))) < image_count:
-        generate_test_images(str(TEST_INPUT_DIR), image_count, *image_size)
-    else:
-        print(f"\nUsing existing test images in {TEST_INPUT_DIR}")
-    
-    # Run benchmark
-    elapsed = run_benchmark(
-        str(CLI_EXECUTABLE),
-        str(TEST_INPUT_DIR),
-        str(TEST_OUTPUT_DIR),
-        "luma2alpha"
-    )
-    
-    if elapsed is None:
-        print("\nBenchmark failed!")
-        sys.exit(1)
-    
-    # Calculate statistics
-    throughput = image_count / elapsed
-    time_per_image = elapsed / image_count * 1000  # milliseconds
-    
-    print("\n" + "=" * 60)
-    print("Benchmark Results")
-    print("=" * 60)
-    print(f"Total images processed: {image_count}")
-    print(f"Total time: {elapsed:.2f} seconds")
-    print(f"Throughput: {throughput:.2f} images/second")
-    print(f"Time per image: {time_per_image:.2f} ms")
-    print("=" * 60)
-    
-    # Verify output
-    output_files = list(TEST_OUTPUT_DIR.glob("*.png"))
-    print(f"\nOutput verification: {len(output_files)}/{image_count} files generated")
-    
-    if len(output_files) == image_count:
-        print("✓ All images processed successfully")
-    else:
-        print("✗ Some images failed to process")
+    # Scenarios matching README
+    scenarios = [
+        {"w": 1000, "h": 1000, "count": 1000},
+        {"w": 2000, "h": 2000, "count": 500},
+    ]
+
+    for s in scenarios:
+        w, h, count = s["w"], s["h"], s["count"]
+        input_dir = SCRIPT_DIR / f"test_input_{w}x{h}"
+        output_dir = SCRIPT_DIR / f"test_output_{w}x{h}"
+        
+        print(f"\nTest configuration: {w}x{h}, {count} images")
+        
+        if not input_dir.exists() or len(list(input_dir.glob("*.png"))) < count:
+            generate_test_images(str(input_dir), count, w, h)
+        else:
+            print(f"Using existing test images in {input_dir}")
+        
+        # Run benchmark
+        elapsed = run_benchmark(
+            str(CLI_EXECUTABLE),
+            str(input_dir),
+            str(output_dir),
+            "luma2alpha"
+        )
+        
+        if elapsed is None:
+            print("\nBenchmark failed!")
+            continue
+        
+        # Calculate statistics
+        throughput = count / elapsed
+        time_per_image = elapsed / count * 1000
+        
+        print("\n" + "-" * 60)
+        print(f"Results: {w}x{h}")
+        print("-" * 60)
+        print(f"Time:       {elapsed:.2f} s")
+        print(f"Throughput: {throughput:.2f} imgs/sec")
+        print(f"Per image:  {time_per_image:.2f} ms")
+        print("-" * 60)
 
 
 if __name__ == "__main__":
