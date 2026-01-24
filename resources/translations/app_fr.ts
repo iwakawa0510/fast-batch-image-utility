@@ -4,6 +4,10 @@
 <context>
     <name>fbiu::MainWindow</name>
     <message>
+        <source>Fast Batch Image Utility</source>
+        <translation>Utilitaire de Traitement par Lots d'Images</translation>
+    </message>
+    <message>
         <source>Language:</source>
         <translation>Langue:</translation>
     </message>
@@ -34,6 +38,10 @@
     <message>
         <source>Luminance → Transparency</source>
         <translation>Luminance → Transparence</translation>
+    </message>
+    <message>
+        <source>Luminance → Alpha</source>
+        <translation>Luminance → Alpha</translation>
     </message>
     <message>
         <source>Convert to PNG</source>
@@ -118,10 +126,6 @@
     <message>
         <source>Processing failed</source>
         <translation>Le traitement a échoué</translation>
-    </message>
-    <message>
-        <source>Fast Batch Image Utility</source>
-        <translation>Utilitaire de Traitement par Lots d'Images</translation>
     </message>
     <message>
         <source>No images found</source>

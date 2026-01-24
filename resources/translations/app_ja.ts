@@ -4,6 +4,10 @@
 <context>
     <name>fbiu::MainWindow</name>
     <message>
+        <source>Fast Batch Image Utility</source>
+        <translation>高速バッチ画像変換ユーティリティ</translation>
+    </message>
+    <message>
         <source>Language:</source>
         <translation>言語:</translation>
     </message>
@@ -33,6 +37,10 @@
     </message>
     <message>
         <source>Luminance → Transparency</source>
+        <translation>輝度 → アルファ変換</translation>
+    </message>
+    <message>
+        <source>Luminance → Alpha</source>
         <translation>輝度 → アルファ変換</translation>
     </message>
     <message>
@@ -118,10 +126,6 @@
     <message>
         <source>Processing failed</source>
         <translation>処理に失敗しました</translation>
-    </message>
-    <message>
-        <source>Fast Batch Image Utility</source>
-        <translation>高速バッチ画像変換ユーティリティ</translation>
     </message>
     <message>
         <source>No images found</source>
