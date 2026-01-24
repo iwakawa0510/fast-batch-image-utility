@@ -45,6 +45,16 @@ echo.
 echo Deploying Qt dependencies...
 "%QT_PATH%\bin\windeployqt.exe" --release "%BUILD_DIR%\bin\Release\fbiu_gui.exe"
 
+REM Copy VC++ Runtime DLLs
+echo.
+echo Copying VC++ Runtime DLLs...
+set RELEASE_DIR=%BUILD_DIR%\bin\Release
+copy /Y "%SystemRoot%\System32\vcruntime140.dll" "%RELEASE_DIR%\"
+copy /Y "%SystemRoot%\System32\vcruntime140_1.dll" "%RELEASE_DIR%\"
+copy /Y "%SystemRoot%\System32\msvcp140.dll" "%RELEASE_DIR%\"
+copy /Y "%SystemRoot%\System32\msvcp140_1.dll" "%RELEASE_DIR%\"
+if exist "%SystemRoot%\System32\msvcp140_2.dll" copy /Y "%SystemRoot%\System32\msvcp140_2.dll" "%RELEASE_DIR%\"
+
 echo.
 echo Build completed successfully!
 echo Executables are in: %BUILD_DIR%\bin\Release\
