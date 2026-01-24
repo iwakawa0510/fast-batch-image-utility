@@ -1,6 +1,9 @@
 #include "image_processor.h"
 #include "thread_pool.h"
 
+// Suppress MSVC warnings
+#define _CRT_SECURE_NO_WARNINGS
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image.h"
@@ -11,6 +14,8 @@
 #include <iostream>
 #include <atomic>
 #include <thread>
+#include <fstream>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -19,8 +24,24 @@ namespace fbiu {
 ImageData ImageProcessor::load_image(const std::string& path) {
     ImageData result;
     
+    // Use char8_t for C++20 compliant UTF-8 path handling
+    fs::path file_path(reinterpret_cast<const char8_t*>(path.c_str()));
+    
+    // Open file using standard stream
+    std::ifstream file(file_path, std::ios::binary | std::ios::ate);
+    if (!file) {
+        std::cerr << "Failed to open file: " << path << std::endl;
+        return result;
+    }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    std::vector<char> buffer(static_cast<size_t>(size));
+    if (!file.read(buffer.data(), size)) return result;
+
     int w, h, c;
-    unsigned char* data = stbi_load(path.c_str(), &w, &h, &c, 0);
+    unsigned char* data = stbi_load_from_memory(reinterpret_cast<unsigned char*>(buffer.data()), static_cast<int>(size), &w, &h, &c, 0);
     
     if (!data) {
         std::cerr << "Failed to load image: " << path << std::endl;
@@ -36,14 +57,25 @@ ImageData ImageProcessor::load_image(const std::string& path) {
     return result;
 }
 
+// stb_image_write 用のコールバック関数
+static void write_to_stream(void* context, void* data, int size) {
+    std::ofstream* ofs = static_cast<std::ofstream*>(context);
+    ofs->write(static_cast<const char*>(data), size);
+}
+
 bool ImageProcessor::save_png(const std::string& path, const ImageData& image) {
     if (!image.is_valid()) {
         std::cerr << "Invalid image data" << std::endl;
         return false;
     }
     
-    int result = stbi_write_png(
-        path.c_str(),
+    fs::path file_path(reinterpret_cast<const char8_t*>(path.c_str()));
+    std::ofstream file(file_path, std::ios::binary);
+    if (!file) return false;
+
+    int result = stbi_write_png_to_func(
+        write_to_stream,
+        &file,
         image.width,
         image.height,
         image.channels,
@@ -55,7 +87,7 @@ bool ImageProcessor::save_png(const std::string& path, const ImageData& image) {
 }
 
 ImageFormat ImageProcessor::detect_format(const std::string& path) {
-    fs::path p(path);
+    fs::path p(reinterpret_cast<const char8_t*>(path.c_str()));
     std::string ext = p.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
     
@@ -189,22 +221,29 @@ ImageData ImageProcessor::process(const ImageData& input, ProcessFunction func) 
 }
 
 bool ImageProcessor::batch_process(const BatchOptions& options) {
-    if (!fs::exists(options.input_dir) || !fs::is_directory(options.input_dir)) {
+    fs::path input_dir(reinterpret_cast<const char8_t*>(options.input_dir.c_str()));
+    fs::path output_dir(reinterpret_cast<const char8_t*>(options.output_dir.c_str()));
+
+    if (!fs::exists(input_dir) || !fs::is_directory(input_dir)) {
         std::cerr << "Input directory does not exist: " << options.input_dir << std::endl;
         return false;
     }
     
     // Create output directory if it doesn't exist
-    if (!fs::exists(options.output_dir)) {
-        fs::create_directories(options.output_dir);
+    if (!fs::exists(output_dir)) {
+        fs::create_directories(output_dir);
     }
     
     // Collect all valid image files
     std::vector<fs::path> image_files;
-    for (const auto& entry : fs::directory_iterator(options.input_dir)) {
+    for (const auto& entry : fs::directory_iterator(input_dir)) {
         if (!entry.is_regular_file()) continue;
         
-        ImageFormat fmt = detect_format(entry.path().string());
+        // fs::path -> u8string -> std::string (UTF-8)
+        std::u8string u8path = entry.path().u8string();
+        std::string path_str(reinterpret_cast<const char*>(u8path.c_str()));
+
+        ImageFormat fmt = detect_format(path_str);
         if (fmt != ImageFormat::UNKNOWN) {
             image_files.push_back(entry.path());
         }
@@ -232,7 +271,9 @@ bool ImageProcessor::batch_process(const BatchOptions& options) {
     for (const auto& input_path : image_files) {
         pool.enqueue([&, input_path]() {
             // Load image
-            ImageData input_image = load_image(input_path.string());
+            std::u8string u8_input_path = input_path.u8string();
+            std::string input_path_str(reinterpret_cast<const char*>(u8_input_path.c_str()));
+            ImageData input_image = load_image(input_path_str);
             if (!input_image.is_valid()) {
                 completed++;
                 if (options.progress_callback) {
@@ -257,10 +298,12 @@ bool ImageProcessor::batch_process(const BatchOptions& options) {
             }
             
             // Save as PNG
-            fs::path output_path = fs::path(options.output_dir) / input_path.filename();
+            fs::path output_path = output_dir / input_path.filename();
             output_path.replace_extension(".png");
             
-            save_png(output_path.string(), output_image);
+            std::u8string u8_output_path = output_path.u8string();
+            std::string output_path_str(reinterpret_cast<const char*>(u8_output_path.c_str()));
+            save_png(output_path_str, output_image);
             
             completed++;
             if (options.progress_callback) {
