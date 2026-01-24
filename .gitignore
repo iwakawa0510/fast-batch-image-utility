@@ -1,0 +1,54 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# Binary output directories (if in-source build occurs)
+bin/
+lib/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+Makefile
+compile_commands.json
+
+# Visual Studio / MSVC
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.ntfs-transaction
+*.pdb
+*.idb
+*.ilk
+*.exp
+
+# VS Code
+.vscode/
+
+# Qt specific
+.qmake.stash
+*.qrc.cpp
+moc_*.cpp
+ui_*.h
+
+# Compiled Object files & Libraries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+
+# OS generated
+.DS_Store
+Thumbs.db
