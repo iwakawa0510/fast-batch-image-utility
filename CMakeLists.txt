@@ -62,13 +62,28 @@ if(BUILD_GUI)
         resources/app.qrc
     )
     
-    # Translation files (.qm) are shipped as files next to the executable.
-    # (We intentionally do not generate them from .ts at build time.)
-    set(QM_FILES
-        ${CMAKE_SOURCE_DIR}/resources/translations/app_ja.qm
-        ${CMAKE_SOURCE_DIR}/resources/translations/app_en.qm
-        ${CMAKE_SOURCE_DIR}/resources/translations/app_fr.qm
+    # Translation files configuration
+    set(TRANS_DIR "${CMAKE_SOURCE_DIR}/resources/translations")
+    set(TS_FILES
+        "${TRANS_DIR}/app_ja.ts"
+        "${TRANS_DIR}/app_en.ts"
+        "${TRANS_DIR}/app_fr.ts"
     )
+    
+    # Automatically generate .qm files from .ts files
+    set(QM_FILES)
+    foreach(TS_FILE IN LISTS TS_FILES)
+        get_filename_component(FILENAME ${TS_FILE} NAME_WE)
+        set(QM_FILE "${TRANS_DIR}/${FILENAME}.qm")
+        list(APPEND QM_FILES ${QM_FILE})
+        
+        add_custom_command(
+            OUTPUT ${QM_FILE}
+            COMMAND Qt6::lrelease ${TS_FILE} -qm ${QM_FILE}
+            DEPENDS ${TS_FILE}
+            COMMENT "Generating ${QM_FILE}"
+        )
+    endforeach()
     
     add_executable(fbiu_gui ${GUI_SOURCES} ${QM_FILES})
     target_link_libraries(fbiu_gui PRIVATE 
