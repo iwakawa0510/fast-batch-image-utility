@@ -1,139 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="fr_FR">
+<TS version="2.1" language="ja_JP">
 <context>
     <name>fbiu::MainWindow</name>
     <message>
         <source>Language:</source>
-        <translation>Langue:</translation>
+        <translation>言語:</translation>
     </message>
     <message>
         <source>Input Folder</source>
-        <translation>Dossier d'Entrée</translation>
+        <translation>入力フォルダ</translation>
     </message>
     <message>
         <source>Input File</source>
-        <translation>Fichier d'entrée</translation>
+        <translation>入力ファイル</translation>
     </message>
     <message>
         <source>Select folder or file, or drag &amp; drop</source>
-        <translation>Sélectionner dossier ou fichier, ou glisser-déposer</translation>
+        <translation>フォルダまたはファイルを選択、またはドラッグ＆ドロップ</translation>
     </message>
     <message>
         <source>Output Folder</source>
-        <translation>Dossier de Sortie</translation>
+        <translation>出力フォルダ</translation>
     </message>
     <message>
         <source>Select output folder</source>
-        <translation>Sélectionner le dossier de sortie</translation>
+        <translation>出力フォルダを選択</translation>
     </message>
     <message>
         <source>Function:</source>
-        <translation>Fonction:</translation>
+        <translation>変換機能:</translation>
     </message>
     <message>
         <source>Luminance → Transparency</source>
-        <translation>Luminance → Transparence</translation>
+        <translation>輝度 → アルファ変換</translation>
     </message>
     <message>
         <source>Convert to PNG</source>
-        <translation>Convertir en PNG</translation>
+        <translation>PNG変換</translation>
     </message>
     <message>
         <source>Preview</source>
-        <translation>Aperçu</translation>
+        <translation>プレビュー</translation>
     </message>
     <message>
         <source>Display Mode:</source>
-        <translation>Mode d'Affichage:</translation>
+        <translation>表示モード:</translation>
     </message>
     <message>
         <source>RGBA Normal</source>
-        <translation>RGBA Normal</translation>
+        <translation>RGBA標準表示</translation>
     </message>
     <message>
         <source>Alpha Only</source>
-        <translation>Alpha Seulement</translation>
+        <translation>アルファのみ</translation>
     </message>
     <message>
         <source>Checkerboard</source>
-        <translation>Damier</translation>
+        <translation>チェッカーボード</translation>
     </message>
     <message>
         <source>Before</source>
-        <translation>Avant</translation>
+        <translation>変換前</translation>
     </message>
     <message>
         <source>After</source>
-        <translation>Après</translation>
+        <translation>変換後</translation>
     </message>
     <message>
         <source>Open output folder after processing</source>
-        <translation>Ouvrir le dossier de sortie après le traitement</translation>
+        <translation>処理完了後に出力フォルダを開く</translation>
     </message>
     <message>
         <source>Execute</source>
-        <translation>Exécuter</translation>
+        <translation>実行</translation>
     </message>
     <message>
         <source>Select Input Folder</source>
-        <translation>Sélectionner le Dossier d'Entrée</translation>
+        <translation>入力フォルダを選択</translation>
     </message>
     <message>
         <source>Select Input File</source>
-        <translation>Sélectionner le fichier d'entrée</translation>
+        <translation>入力ファイルを選択</translation>
     </message>
     <message>
         <source>Image Files (*.png *.jpg *.jpeg *.tif *.tiff *.tga *.bmp)</source>
-        <translation>Fichiers image (*.png *.jpg *.jpeg *.tif *.tiff *.tga *.bmp)</translation>
+        <translation>画像ファイル (*.png *.jpg *.jpeg *.tif *.tiff *.tga *.bmp)</translation>
     </message>
     <message>
         <source>Select Output Folder</source>
-        <translation>Sélectionner le Dossier de Sortie</translation>
+        <translation>出力フォルダを選択</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>Erreur</translation>
+        <translation>エラー</translation>
     </message>
     <message>
         <source>Please select input (folder or file) and output folder</source>
-        <translation>Veuillez sélectionner l'entrée (dossier ou fichier) et le dossier de sortie</translation>
+        <translation>入力（フォルダまたはファイル）と出力フォルダを選択してください</translation>
     </message>
     <message>
         <source>Failed to load input image</source>
-        <translation>Échec du chargement de l'image d'entrée</translation>
+        <translation>入力画像の読み込みに失敗しました</translation>
     </message>
     <message>
         <source>Failed to process image</source>
-        <translation>Échec du traitement de l'image</translation>
+        <translation>画像の処理に失敗しました</translation>
     </message>
     <message>
         <source>Complete</source>
-        <translation>Terminé</translation>
+        <translation>完了</translation>
     </message>
     <message>
         <source>Processing completed successfully</source>
-        <translation>Traitement terminé avec succès</translation>
+        <translation>処理が正常に完了しました</translation>
     </message>
     <message>
         <source>Processing failed</source>
-        <translation>Le traitement a échoué</translation>
+        <translation>処理に失敗しました</translation>
     </message>
     <message>
         <source>Fast Batch Image Utility</source>
-        <translation>Utilitaire de Traitement par Lots d'Images</translation>
+        <translation>高速バッチ画像変換ユーティリティ</translation>
     </message>
     <message>
         <source>No images found</source>
-        <translation>Aucune image trouvée</translation>
+        <translation>画像が見つかりません</translation>
     </message>
     <message>
         <source>No input selected</source>
-        <translation>Aucune entrée sélectionnée</translation>
+        <translation>入力が選択されていません</translation>
     </message>
     <message>
         <source>Dropped file is not a supported image format</source>
-        <translation>Le fichier déposé n'est pas un format d'image pris en charge</translation>
+        <translation>ドロップされたファイルはサポートされている画像形式ではありません</translation>
     </message>
 </context>
 </TS>
