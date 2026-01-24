@@ -148,8 +148,10 @@ ImageData ImageProcessor::luma_to_alpha(const ImageData& input, uint8_t threshol
         } else {
             // Above threshold: apply transparency (brighter = more transparent)
             // Map threshold..255 to 255..0
+            int range = 255 - threshold;
+            if (range == 0) range = 1; // Avoid division by zero
             uint8_t mapped_luma = static_cast<uint8_t>(
-                255 - ((static_cast<uint16_t>(luma - threshold) * 255) / (255 - threshold))
+                255 - ((static_cast<uint16_t>(luma - threshold) * 255) / range)
             );
             alpha = mapped_luma;
         }
