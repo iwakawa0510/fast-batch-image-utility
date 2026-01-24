@@ -28,6 +28,7 @@ include_directories(${CMAKE_SOURCE_DIR}/third_party/stb)
 
 # Compiler flags
 if(MSVC)
+    add_compile_options(/W4 /O2)
     # Force C++20 standard for MSVC to ensure char8_t is available
     add_compile_options(/W4 /O2 /std:c++20)
     if(ENABLE_SIMD)
