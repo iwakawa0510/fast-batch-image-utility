@@ -241,12 +241,26 @@ python benchmark/benchmark.py
 
 ## ライセンス
 
-本プロジェクトはMITライセンスの下で公開されています。
+### 本プロジェクトのライセンス
 
-### 使用ライブラリのライセンス
+本プロジェクトのソースコード（Qtライブラリを除く）はMITライセンスで公開されています。
+詳細は `LICENSE` ファイルをご覧ください。
 
-- **Qt6**: LGPL v3 / GPL v3 / Commercial License
-- **stb_image/stb_image_write**: Public Domain (MIT License compatible)
+### サードパーティライブラリのライセンス
+
+本ソフトウェアは以下のライブラリを使用しています：
+
+#### Qt6（必須・動的リンク）
+- **ライセンス:** LGPL v3 / GPL v3 / Commercial License（本プロジェクトはLGPL v3を採用）
+- **ソースコード:** https://download.qt.io/official_releases/qt/
+- **コンプライアンス:** Qtライブラリは動的リンクで利用し、ユーザーによる差し替えが可能です
+- **詳細:** 配布パッケージ内の `THIRD_PARTY_LICENSES.md` および `licenses/Qt/` をご覧ください
+
+#### stb_image / stb_image_write（同梱）
+- **ライセンス:** Public Domain / MIT
+- **ソースコード:** https://github.com/nothings/stb
+
+本ソフトウェアの配布パッケージには、LGPL要件に従いQtのライセンス条文が同梱されています。
 
 ## プロジェクト構成
 
