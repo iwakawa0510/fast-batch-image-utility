@@ -126,3 +126,51 @@ endif()
 if(BUILD_CLI)
     install(TARGETS fbiu_cli RUNTIME DESTINATION bin)
 endif()
+
+# --- LGPL Compliance for Qt ---
+# This section handles copying Qt's license files to the output directory
+# for both local builds and installation packages.
+if(BUILD_GUI)
+    # Find Qt's root directory to locate license files
+    get_target_property(QT_QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
+    get_filename_component(QT_BIN_DIR "${QT_QMAKE_EXECUTABLE}" DIRECTORY)
+    get_filename_component(QT_ROOT_DIR "${QT_BIN_DIR}/.." ABSOLUTE)
+
+    # Search for license directory in standard locations (Kit dir, Version dir, Qt root)
+    set(POSSIBLE_LOCATIONS
+        "${QT_ROOT_DIR}/Licenses"
+        "${QT_ROOT_DIR}/licenses"
+        "${QT_ROOT_DIR}/../Licenses"
+        "${QT_ROOT_DIR}/../licenses"
+        "${QT_ROOT_DIR}/../../Licenses"
+        "${QT_ROOT_DIR}/../../licenses"
+    )
+
+    set(QT_LICENSE_DIR "")
+    foreach(LOC ${POSSIBLE_LOCATIONS})
+        if(EXISTS "${LOC}")
+            get_filename_component(QT_LICENSE_DIR "${LOC}" ABSOLUTE)
+            break()
+        endif()
+    endforeach()
+
+    if(QT_LICENSE_DIR)
+        message(STATUS "Found Qt License Dir: ${QT_LICENSE_DIR}")
+
+        # 1. For local builds, copy licenses next to the executable after it's built.
+        #    This uses a POST_BUILD command to correctly handle multi-configuration
+        #    generators (like Visual Studio) which create subdirectories like 'Release' or 'Debug'.
+        file(GLOB QT_LICENSE_FILES "${QT_LICENSE_DIR}/*.txt")
+        add_custom_command(TARGET fbiu_gui POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:fbiu_gui>/licenses/Qt"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${QT_LICENSE_FILES} "$<TARGET_FILE_DIR:fbiu_gui>/licenses/Qt/"
+            COMMENT "Copying Qt licenses for local build...")
+
+        # 2. Install licenses for packaging (e.g., when running 'cpack' or 'cmake --install')
+        install(DIRECTORY "${QT_LICENSE_DIR}/"
+                DESTINATION "bin/licenses/Qt"
+                FILES_MATCHING PATTERN "*.txt")
+    else()
+        message(WARNING "Could not find Qt license directory. Searched in '${QT_ROOT_DIR}'. Please add license files manually for LGPL compliance.")
+    endif()
+endif()
