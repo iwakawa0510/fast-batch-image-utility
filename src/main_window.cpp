@@ -12,6 +12,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QFileInfo>
+#include <QMenuBar>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -142,6 +143,11 @@ void MainWindow::setup_ui() {
     setAcceptDrops(true);
     input_path_edit->setAcceptDrops(true);
     output_path_edit->setAcceptDrops(true);
+
+    // Help Menu
+    helpMenu = menuBar()->addMenu(tr("Help"));
+    aboutQtAction = new QAction(tr("About Qt"), this);
+    helpMenu->addAction(aboutQtAction);
 }
 
 void MainWindow::setup_connections() {
@@ -159,6 +165,8 @@ void MainWindow::setup_connections() {
             this, &MainWindow::language_changed);
     connect(preview_mode_combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::update_preview);
+
+    connect(aboutQtAction, &QAction::triggered, this, &MainWindow::showAboutQt);
 }
 
 void MainWindow::select_input_folder() {
@@ -323,6 +331,10 @@ void MainWindow::retranslate_ui() {
     preview_mode_combo->setItemText(0, tr("RGBA Normal"));
     preview_mode_combo->setItemText(1, tr("Alpha Only"));
     preview_mode_combo->setItemText(2, tr("Checkerboard"));
+
+    // Menu
+    helpMenu->setTitle(tr("Help"));
+    aboutQtAction->setText(tr("About Qt"));
 }
 
 void MainWindow::update_preview() {
@@ -484,6 +496,10 @@ void MainWindow::handle_dropped_paths(const QStringList& paths) {
                 tr("Dropped file is not a supported image format"));
         }
     }
+}
+
+void MainWindow::showAboutQt() {
+    QMessageBox::aboutQt(this, tr("About Qt"));
 }
 
 } // namespace fbiu

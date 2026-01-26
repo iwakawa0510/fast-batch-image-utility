@@ -10,6 +10,8 @@
 #include <QCheckBox>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QMenu>
+#include <QAction>
 #include <QMimeData>
 #include "image_processor.h"
 
@@ -35,6 +37,7 @@ private slots:
     void language_changed(int index);
     void update_preview();
     void handle_dropped_paths(const QStringList& paths);
+    void showAboutQt();
     
 private:
     void setup_ui();
@@ -59,6 +62,10 @@ private:
     QLabel* preview_after_label;
     QComboBox* preview_mode_combo;
     
+    // Menu
+    QMenu* helpMenu;
+    QAction* aboutQtAction;
+
     // State
     QString input_folder;
     QString input_file;  // Single file input mode
