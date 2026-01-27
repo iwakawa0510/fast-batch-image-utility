@@ -254,7 +254,6 @@ python benchmark/benchmark.py
 - **ライセンス:** LGPL v3 / GPL v3 / Commercial License（本プロジェクトはLGPL v3を採用）
 - **ソースコード:** https://download.qt.io/official_releases/qt/
 - **コンプライアンス:** Qtライブラリは動的リンクで利用し、ユーザーによる差し替えが可能です
-- **詳細:** 配布パッケージ内の `THIRD_PARTY_LICENSES.md` および `licenses/Qt/` をご覧ください
 
 #### stb_image / stb_image_write（同梱）
 - **ライセンス:** Public Domain / MIT
