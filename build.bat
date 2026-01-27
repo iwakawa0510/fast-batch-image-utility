@@ -7,7 +7,14 @@ setlocal enabledelayedexpansion
 REM Get the directory where this script is located
 set SCRIPT_DIR=%~dp0
 set BUILD_DIR=%SCRIPT_DIR%build
-set QT_PATH=E:/dev_tool/Qt/6.8.1/msvc2022_64
+
+if "%Qt6_DIR%"=="" (
+    echo [ERROR] Qt6_DIR environment variable is not set.
+    echo Please set it, for example: set Qt6_DIR=C:\Qt\6.8.1\msvc2022_64
+    pause
+    exit /b 1
+)
+set QT_PATH=%Qt6_DIR%
 
 REM Create build directory if it doesn't exist
 if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
