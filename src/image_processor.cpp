@@ -106,7 +106,7 @@ ImageFormat ImageProcessor::detect_format(const std::string& path) {
 
 uint8_t ImageProcessor::calculate_luminance(uint8_t r, uint8_t g, uint8_t b) {
     // L = 0.299*R + 0.587*G + 0.114*B
-    float luma = 0.299f * r + 0.587f * g + 0.114f * b;
+    float luma = LUMA_COEF_R * r + LUMA_COEF_G * g + LUMA_COEF_B * b;
     return static_cast<uint8_t>(std::clamp(luma, 0.0f, 255.0f));
 }
 

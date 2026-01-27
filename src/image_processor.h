@@ -7,6 +7,14 @@
 
 namespace fbiu {
 
+// ITU-R BT.601 standard luminance coefficients
+constexpr float LUMA_COEF_R = 0.299f;
+constexpr float LUMA_COEF_G = 0.587f;
+constexpr float LUMA_COEF_B = 0.114f;
+
+// Default threshold for luma-to-alpha conversion
+constexpr uint8_t DEFAULT_LUMA_THRESHOLD = 200;
+
 enum class ImageFormat {
     PNG,
     TIFF,
