@@ -15,6 +15,14 @@ constexpr float LUMA_COEF_B = 0.114f;
 // Default threshold for luma-to-alpha conversion
 constexpr uint8_t DEFAULT_LUMA_THRESHOLD = 200;
 
+// Custom luminance parameters
+struct CustomLumaParams {
+    float coef_r = LUMA_COEF_R;
+    float coef_g = LUMA_COEF_G;
+    float coef_b = LUMA_COEF_B;
+    uint8_t threshold = DEFAULT_LUMA_THRESHOLD;
+};
+
 enum class ImageFormat {
     PNG,
     TIFF,
@@ -25,8 +33,9 @@ enum class ImageFormat {
 };
 
 enum class ProcessFunction {
-    LUMA_TO_ALPHA,    // Luminance → Transparency (alpha) mask
-    CONVERT_TO_PNG     // Simple format conversion to PNG
+    LUMA_TO_ALPHA,        // Luminance → Transparency (alpha) mask
+    LUMA_TO_ALPHA_CUSTOM, // Custom luminance → Transparency with adjustable parameters
+    CONVERT_TO_PNG        // Simple format conversion to PNG
 };
 
 struct ImageData {
@@ -56,7 +65,8 @@ public:
     static ImageFormat detect_format(const std::string& path);
     
     // Process functions
-    static ImageData luma_to_alpha(const ImageData& input, uint8_t threshold = 200);
+    static ImageData luma_to_alpha(const ImageData& input, uint8_t threshold = DEFAULT_LUMA_THRESHOLD);
+    static ImageData luma_to_alpha_custom(const ImageData& input, const CustomLumaParams& params);
     static ImageData convert_to_png(const ImageData& input);
     
     // Apply processing function
@@ -68,7 +78,8 @@ public:
         std::string output_dir;
         ProcessFunction function = ProcessFunction::LUMA_TO_ALPHA;
         int num_threads = 0;  // 0 = auto-detect
-        uint8_t luma_threshold = 200;  // Threshold for preserving original colors (0-255)
+        uint8_t luma_threshold = DEFAULT_LUMA_THRESHOLD;  // Threshold for standard luma_to_alpha
+        CustomLumaParams custom_params;  // Parameters for LUMA_TO_ALPHA_CUSTOM
         std::function<void(int, int, const std::string&)> progress_callback;
     };
     
@@ -77,6 +88,10 @@ public:
 private:
     // Luminance calculation: L = 0.299*R + 0.587*G + 0.114*B
     static uint8_t calculate_luminance(uint8_t r, uint8_t g, uint8_t b);
+    
+    // Custom luminance calculation with custom coefficients
+    static uint8_t calculate_luminance_custom(uint8_t r, uint8_t g, uint8_t b, 
+                                             float coef_r, float coef_g, float coef_b);
 };
 
 } // namespace fbiu

@@ -13,6 +13,7 @@
 #include <QUrl>
 #include <QFileInfo>
 #include <QMenuBar>
+#include <QSettings>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -23,6 +24,9 @@ MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), current_function(ProcessFunction::LUMA_TO_ALPHA) {
     setWindowTitle("Fast Batch Image Utility");
     resize(1000, 700);
+    
+    // Load custom parameters from settings
+    load_custom_params();
     
     setup_ui();
     setup_connections();
@@ -75,12 +79,17 @@ void MainWindow::setup_ui() {
     function_combo = new QComboBox(this);
     function_combo->addItem(tr("Luminance → Transparency"), 
                            static_cast<int>(ProcessFunction::LUMA_TO_ALPHA));
+    function_combo->addItem(tr("Luminance → Transparency (Custom)"), 
+                           static_cast<int>(ProcessFunction::LUMA_TO_ALPHA_CUSTOM));
     function_combo->addItem(tr("Convert to PNG"), 
                            static_cast<int>(ProcessFunction::CONVERT_TO_PNG));
     func_layout->addWidget(func_label);
     func_layout->addWidget(function_combo);
     func_layout->addStretch();
     main_layout->addLayout(func_layout);
+    
+    // Custom parameters UI (initially hidden)
+    setup_custom_param_ui(main_layout);
     
     // Preview section
     QGroupBox* preview_group = new QGroupBox(tr("Preview"), this);
@@ -148,6 +157,68 @@ void MainWindow::setup_ui() {
     helpMenu = menuBar()->addMenu(tr("Help"));
     aboutQtAction = new QAction(tr("About Qt"), this);
     helpMenu->addAction(aboutQtAction);
+    
+    // Initially hide custom parameters
+    update_custom_param_visibility();
+}
+
+void MainWindow::setup_custom_param_ui(QVBoxLayout* main_layout) {
+    custom_params_group = new QGroupBox(tr("Custom Parameters"), this);
+    QVBoxLayout* custom_layout = new QVBoxLayout(custom_params_group);
+    
+    // Threshold slider
+    QHBoxLayout* threshold_layout = new QHBoxLayout();
+    QLabel* threshold_label = new QLabel(tr("Threshold:"), this);
+    threshold_slider = new QSlider(Qt::Horizontal, this);
+    threshold_slider->setRange(0, 255);
+    threshold_slider->setValue(current_custom_params.threshold);
+    threshold_value_label = new QLabel(QString::number(current_custom_params.threshold), this);
+    threshold_value_label->setMinimumWidth(50);
+    threshold_layout->addWidget(threshold_label);
+    threshold_layout->addWidget(threshold_slider);
+    threshold_layout->addWidget(threshold_value_label);
+    custom_layout->addLayout(threshold_layout);
+    
+    // R coefficient slider (0.0-1.0, displayed as 0-1000 for precision)
+    QHBoxLayout* coef_r_layout = new QHBoxLayout();
+    QLabel* coef_r_label = new QLabel(tr("R Coefficient:"), this);
+    coef_r_slider = new QSlider(Qt::Horizontal, this);
+    coef_r_slider->setRange(0, 1000);
+    coef_r_slider->setValue(static_cast<int>(current_custom_params.coef_r * 1000));
+    coef_r_value_label = new QLabel(QString::number(current_custom_params.coef_r, 'f', 3), this);
+    coef_r_value_label->setMinimumWidth(50);
+    coef_r_layout->addWidget(coef_r_label);
+    coef_r_layout->addWidget(coef_r_slider);
+    coef_r_layout->addWidget(coef_r_value_label);
+    custom_layout->addLayout(coef_r_layout);
+    
+    // G coefficient slider
+    QHBoxLayout* coef_g_layout = new QHBoxLayout();
+    QLabel* coef_g_label = new QLabel(tr("G Coefficient:"), this);
+    coef_g_slider = new QSlider(Qt::Horizontal, this);
+    coef_g_slider->setRange(0, 1000);
+    coef_g_slider->setValue(static_cast<int>(current_custom_params.coef_g * 1000));
+    coef_g_value_label = new QLabel(QString::number(current_custom_params.coef_g, 'f', 3), this);
+    coef_g_value_label->setMinimumWidth(50);
+    coef_g_layout->addWidget(coef_g_label);
+    coef_g_layout->addWidget(coef_g_slider);
+    coef_g_layout->addWidget(coef_g_value_label);
+    custom_layout->addLayout(coef_g_layout);
+    
+    // B coefficient slider
+    QHBoxLayout* coef_b_layout = new QHBoxLayout();
+    QLabel* coef_b_label = new QLabel(tr("B Coefficient:"), this);
+    coef_b_slider = new QSlider(Qt::Horizontal, this);
+    coef_b_slider->setRange(0, 1000);
+    coef_b_slider->setValue(static_cast<int>(current_custom_params.coef_b * 1000));
+    coef_b_value_label = new QLabel(QString::number(current_custom_params.coef_b, 'f', 3), this);
+    coef_b_value_label->setMinimumWidth(50);
+    coef_b_layout->addWidget(coef_b_label);
+    coef_b_layout->addWidget(coef_b_slider);
+    coef_b_layout->addWidget(coef_b_value_label);
+    custom_layout->addLayout(coef_b_layout);
+    
+    main_layout->addWidget(custom_params_group);
 }
 
 void MainWindow::setup_connections() {
@@ -165,8 +236,13 @@ void MainWindow::setup_connections() {
             this, &MainWindow::language_changed);
     connect(preview_mode_combo, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &MainWindow::update_preview);
-
     connect(aboutQtAction, &QAction::triggered, this, &MainWindow::showAboutQt);
+    
+    // Custom parameter slider connections
+    connect(threshold_slider, &QSlider::valueChanged, this, &MainWindow::threshold_slider_changed);
+    connect(coef_r_slider, &QSlider::valueChanged, this, &MainWindow::coef_r_slider_changed);
+    connect(coef_g_slider, &QSlider::valueChanged, this, &MainWindow::coef_g_slider_changed);
+    connect(coef_b_slider, &QSlider::valueChanged, this, &MainWindow::coef_b_slider_changed);
 }
 
 void MainWindow::select_input_folder() {
@@ -222,30 +298,28 @@ void MainWindow::execute_batch() {
         // Single file processing
         ImageData input_image = ImageProcessor::load_image(input_file.toStdString());
         if (!input_image.is_valid()) {
-            QMessageBox::critical(this, tr("Error"), 
-                tr("Failed to load input image"));
+            QMessageBox::critical(this, tr("Error"), tr("Failed to load input file"));
             execute_button->setEnabled(true);
             return;
         }
         
         ImageData output_image;
         if (current_function == ProcessFunction::LUMA_TO_ALPHA) {
-            output_image = ImageProcessor::luma_to_alpha(input_image, 200); // Default threshold
+            output_image = ImageProcessor::luma_to_alpha(input_image, 200);
+        } else if (current_function == ProcessFunction::LUMA_TO_ALPHA_CUSTOM) {
+            output_image = ImageProcessor::luma_to_alpha_custom(input_image, current_custom_params);
         } else {
             output_image = ImageProcessor::process(input_image, current_function);
         }
         
         if (!output_image.is_valid()) {
-            QMessageBox::critical(this, tr("Error"), 
-                tr("Failed to process image"));
+            QMessageBox::critical(this, tr("Error"), tr("Failed to process image"));
             execute_button->setEnabled(true);
             return;
         }
         
-        // Determine output filename
         QFileInfo file_info(input_file);
-        QString output_filename = file_info.baseName() + ".png";
-        QString output_path = QDir(output_folder).filePath(output_filename);
+        QString output_path = QDir(output_folder).filePath(file_info.baseName() + ".png");
         
         success = ImageProcessor::save_png(output_path.toStdString(), output_image);
         progress_bar->setValue(100);
@@ -255,9 +329,8 @@ void MainWindow::execute_batch() {
         options.input_dir = input_folder.toStdString();
         options.output_dir = output_folder.toStdString();
         options.function = current_function;
-        options.num_threads = 0; // auto
-        options.luma_threshold = 200; // Default threshold
-        
+        options.luma_threshold = 200;  // For standard LUMA_TO_ALPHA
+        options.custom_params = current_custom_params;  // For LUMA_TO_ALPHA_CUSTOM
         options.progress_callback = [this](int completed, int total, const std::string& filename) {
             int progress = (completed * 100) / total;
             QMetaObject::invokeMethod(this, [this, progress]() {
@@ -271,13 +344,11 @@ void MainWindow::execute_batch() {
     execute_button->setEnabled(true);
     
     if (success) {
-        QMessageBox::information(this, tr("Complete"), 
+        QMessageBox::information(this, tr("Success"), 
             tr("Processing completed successfully"));
         
-        // Open output folder if checkbox is checked
         if (open_folder_checkbox->isChecked()) {
-            QUrl url = QUrl::fromLocalFile(output_folder);
-            QDesktopServices::openUrl(url);
+            QDesktopServices::openUrl(QUrl::fromLocalFile(output_folder));
         }
     } else {
         QMessageBox::critical(this, tr("Error"), 
@@ -288,6 +359,7 @@ void MainWindow::execute_batch() {
 void MainWindow::function_changed(int index) {
     current_function = static_cast<ProcessFunction>(
         function_combo->itemData(index).toInt());
+    update_custom_param_visibility();
     update_preview();
 }
 
@@ -326,7 +398,8 @@ void MainWindow::retranslate_ui() {
     
     // Update combo box items
     function_combo->setItemText(0, tr("Luminance → Transparency"));
-    function_combo->setItemText(1, tr("Convert to PNG"));
+    function_combo->setItemText(1, tr("Luminance → Transparency (Custom)"));
+    function_combo->setItemText(2, tr("Convert to PNG"));
     
     preview_mode_combo->setItemText(0, tr("RGBA Normal"));
     preview_mode_combo->setItemText(1, tr("Alpha Only"));
@@ -335,6 +408,11 @@ void MainWindow::retranslate_ui() {
     // Menu
     helpMenu->setTitle(tr("Help"));
     aboutQtAction->setText(tr("About Qt"));
+    
+    // Custom parameters group
+    if (custom_params_group) {
+        custom_params_group->setTitle(tr("Custom Parameters"));
+    }
 }
 
 void MainWindow::update_preview() {
@@ -377,7 +455,13 @@ void MainWindow::update_preview() {
     preview_before_label->setPixmap(pix_before);
     
     // Process and display after
-    ImageData after = ImageProcessor::process(before, current_function);
+    ImageData after;
+    if (current_function == ProcessFunction::LUMA_TO_ALPHA_CUSTOM) {
+        after = ImageProcessor::luma_to_alpha_custom(before, current_custom_params);
+    } else {
+        after = ImageProcessor::process(before, current_function);
+    }
+    
     if (!after.is_valid()) return;
     
     QImage qimg_after(after.pixels.data(), after.width, after.height,
@@ -500,6 +584,56 @@ void MainWindow::handle_dropped_paths(const QStringList& paths) {
 
 void MainWindow::showAboutQt() {
     QMessageBox::aboutQt(this, tr("About Qt"));
+}
+
+void MainWindow::threshold_slider_changed(int value) {
+    current_custom_params.threshold = static_cast<uint8_t>(value);
+    threshold_value_label->setText(QString::number(value));
+    save_custom_params();
+    update_preview();
+}
+
+void MainWindow::coef_r_slider_changed(int value) {
+    current_custom_params.coef_r = value / 1000.0f;
+    coef_r_value_label->setText(QString::number(current_custom_params.coef_r, 'f', 3));
+    save_custom_params();
+    update_preview();
+}
+
+void MainWindow::coef_g_slider_changed(int value) {
+    current_custom_params.coef_g = value / 1000.0f;
+    coef_g_value_label->setText(QString::number(current_custom_params.coef_g, 'f', 3));
+    save_custom_params();
+    update_preview();
+}
+
+void MainWindow::coef_b_slider_changed(int value) {
+    current_custom_params.coef_b = value / 1000.0f;
+    coef_b_value_label->setText(QString::number(current_custom_params.coef_b, 'f', 3));
+    save_custom_params();
+    update_preview();
+}
+
+void MainWindow::update_custom_param_visibility() {
+    if (custom_params_group) {
+        custom_params_group->setVisible(current_function == ProcessFunction::LUMA_TO_ALPHA_CUSTOM);
+    }
+}
+
+void MainWindow::save_custom_params() {
+    QSettings settings("Anthropic", "FastBatchImageUtility");
+    settings.setValue("custom_threshold", current_custom_params.threshold);
+    settings.setValue("custom_coef_r", current_custom_params.coef_r);
+    settings.setValue("custom_coef_g", current_custom_params.coef_g);
+    settings.setValue("custom_coef_b", current_custom_params.coef_b);
+}
+
+void MainWindow::load_custom_params() {
+    QSettings settings("Anthropic", "FastBatchImageUtility");
+    current_custom_params.threshold = settings.value("custom_threshold", DEFAULT_LUMA_THRESHOLD).toUInt();
+    current_custom_params.coef_r = settings.value("custom_coef_r", LUMA_COEF_R).toFloat();
+    current_custom_params.coef_g = settings.value("custom_coef_g", LUMA_COEF_G).toFloat();
+    current_custom_params.coef_b = settings.value("custom_coef_b", LUMA_COEF_B).toFloat();
 }
 
 } // namespace fbiu
