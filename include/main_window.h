@@ -13,6 +13,9 @@
 #include <QMenu>
 #include <QAction>
 #include <QMimeData>
+#include <QGroupBox>
+#include <QSlider>
+#include <QVBoxLayout>
 #include "image_processor.h"
 
 namespace fbiu {
@@ -39,11 +42,23 @@ private slots:
     void handle_dropped_paths(const QStringList& paths);
     void showAboutQt();
     
+    // Custom parameter slots
+    void threshold_slider_changed(int value);
+    void coef_r_slider_changed(int value);
+    void coef_g_slider_changed(int value);
+    void coef_b_slider_changed(int value);
+    
 private:
     void setup_ui();
     void setup_connections();
     void switch_language(const QString& lang);
     void retranslate_ui();
+    
+    // Custom parameter functions
+    void setup_custom_param_ui(QVBoxLayout* main_layout);
+    void update_custom_param_visibility();
+    void save_custom_params();
+    void load_custom_params();
     
     // UI components
     QPushButton* input_button;
@@ -65,6 +80,17 @@ private:
     // Menu
     QMenu* helpMenu;
     QAction* aboutQtAction;
+    
+    // Custom parameter UI elements
+    QGroupBox* custom_params_group;
+    QSlider* threshold_slider;
+    QSlider* coef_r_slider;
+    QSlider* coef_g_slider;
+    QSlider* coef_b_slider;
+    QLabel* threshold_value_label;
+    QLabel* coef_r_value_label;
+    QLabel* coef_g_value_label;
+    QLabel* coef_b_value_label;
 
     // State
     QString input_folder;
@@ -72,6 +98,7 @@ private:
     QString output_folder;
     fbiu::ProcessFunction current_function;
     bool is_single_file_mode = false;
+    fbiu::CustomLumaParams current_custom_params;
     
     // Translation
     QTranslator translator;

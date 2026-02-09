@@ -110,6 +110,13 @@ uint8_t ImageProcessor::calculate_luminance(uint8_t r, uint8_t g, uint8_t b) {
     return static_cast<uint8_t>(std::clamp(luma, 0.0f, 255.0f));
 }
 
+uint8_t ImageProcessor::calculate_luminance_custom(uint8_t r, uint8_t g, uint8_t b,
+                                                   float coef_r, float coef_g, float coef_b) {
+    // Custom: L = coef_r*R + coef_g*G + coef_b*B
+    float luma = coef_r * r + coef_g * g + coef_b * b;
+    return static_cast<uint8_t>(std::clamp(luma, 0.0f, 255.0f));
+}
+
 ImageData ImageProcessor::luma_to_alpha(const ImageData& input, uint8_t threshold) {
     if (!input.is_valid()) {
         return ImageData{};
@@ -216,6 +223,112 @@ ImageData ImageProcessor::luma_to_alpha(const ImageData& input, uint8_t threshol
     return output;
 }
 
+ImageData ImageProcessor::luma_to_alpha_custom(const ImageData& input, const CustomLumaParams& params) {
+    if (!input.is_valid()) {
+        return ImageData{};
+    }
+    
+    // First, convert input to RGBA format (normalize to have alpha channel)
+    ImageData rgba_input;
+    rgba_input.width = input.width;
+    rgba_input.height = input.height;
+    rgba_input.channels = 4; // RGBA
+    rgba_input.pixels.resize(input.width * input.height * 4);
+    
+    const int pixel_count = input.width * input.height;
+    
+    // Convert input to RGBA first
+    for (int i = 0; i < pixel_count; ++i) {
+        uint8_t r, g, b, a = 255; // Default alpha to opaque
+        
+        if (input.channels == 1) {
+            // Grayscale input -> RGB
+            r = g = b = input.pixels[i];
+        } else if (input.channels == 2) {
+            // Grayscale + Alpha input
+            r = g = b = input.pixels[i * 2 + 0];
+            a = input.pixels[i * 2 + 1];
+        } else if (input.channels == 3) {
+            // RGB input
+            r = input.pixels[i * 3 + 0];
+            g = input.pixels[i * 3 + 1];
+            b = input.pixels[i * 3 + 2];
+        } else if (input.channels == 4) {
+            // RGBA input
+            r = input.pixels[i * 4 + 0];
+            g = input.pixels[i * 4 + 1];
+            b = input.pixels[i * 4 + 2];
+            a = input.pixels[i * 4 + 3];
+        } else {
+            // Invalid channel count, skip
+            continue;
+        }
+        
+        // Store as RGBA
+        rgba_input.pixels[i * 4 + 0] = r;
+        rgba_input.pixels[i * 4 + 1] = g;
+        rgba_input.pixels[i * 4 + 2] = b;
+        rgba_input.pixels[i * 4 + 3] = a;
+    }
+    
+    // Now convert luminance to alpha channel (using custom coefficients)
+    ImageData output;
+    output.width = rgba_input.width;
+    output.height = rgba_input.height;
+    output.channels = 4; // RGBA
+    output.pixels.resize(rgba_input.width * rgba_input.height * 4);
+    
+    int scalar_start_index = 0;
+
+#ifdef ENABLE_SIMD
+    // 将来的にここにSIMD実装を追加し、処理済みピクセル数を scalar_start_index に設定します
+    // scalar_start_index = (pixel_count / 8) * 8;
+    // ... SIMD loop ...
+#endif
+
+    for (int i = scalar_start_index; i < pixel_count; ++i) {
+        uint8_t r = rgba_input.pixels[i * 4 + 0];
+        uint8_t g = rgba_input.pixels[i * 4 + 1];
+        uint8_t b = rgba_input.pixels[i * 4 + 2];
+        
+        // Calculate luminance from RGB using custom coefficients.
+        // User intent: "luminance -> transparency" (brighter = more transparent),
+        // so alpha should be inverted: alpha = 255 - luminance.
+        uint8_t luma = calculate_luminance_custom(r, g, b, params.coef_r, params.coef_g, params.coef_b);
+        
+        // Threshold logic: if luminance is below threshold, preserve original color fully (alpha = 255)
+        // Otherwise, apply transparency based on luminance
+        uint8_t alpha;
+        if (luma < params.threshold) {
+            // Below threshold: keep original color (fully opaque)
+            alpha = 255;
+        } else {
+            // Above threshold: apply transparency (brighter = more transparent)
+            // Map threshold..255 to 255..0
+            int range = 255 - params.threshold;
+            if (range == 0) range = 1; // Avoid division by zero
+            uint8_t mapped_luma = static_cast<uint8_t>(
+                255 - ((static_cast<uint16_t>(luma - params.threshold) * 255) / range)
+            );
+            alpha = mapped_luma;
+        }
+        
+        // If the source already had alpha, preserve it by multiplying:
+        // final_alpha = alpha * src_alpha / 255
+        uint8_t src_a = rgba_input.pixels[i * 4 + 3];
+        uint8_t final_alpha = static_cast<uint8_t>(
+            (static_cast<uint16_t>(alpha) * static_cast<uint16_t>(src_a)) / 255
+        );
+
+        output.pixels[i * 4 + 0] = r;
+        output.pixels[i * 4 + 1] = g;
+        output.pixels[i * 4 + 2] = b;
+        output.pixels[i * 4 + 3] = final_alpha;
+    }
+    
+    return output;
+}
+
 ImageData ImageProcessor::convert_to_png(const ImageData& input) {
     // Simply return a copy - conversion happens during save
     return input;
@@ -224,7 +337,12 @@ ImageData ImageProcessor::convert_to_png(const ImageData& input) {
 ImageData ImageProcessor::process(const ImageData& input, ProcessFunction func) {
     switch (func) {
         case ProcessFunction::LUMA_TO_ALPHA:
-            return luma_to_alpha(input, 200); // Default threshold
+            return luma_to_alpha(input, DEFAULT_LUMA_THRESHOLD);
+        case ProcessFunction::LUMA_TO_ALPHA_CUSTOM: {
+            // Use default custom params when called from simple process()
+            CustomLumaParams default_params;
+            return luma_to_alpha_custom(input, default_params);
+        }
         case ProcessFunction::CONVERT_TO_PNG:
             return convert_to_png(input);
         default:
@@ -298,6 +416,8 @@ bool ImageProcessor::batch_process(const BatchOptions& options) {
             ImageData output_image;
             if (options.function == ProcessFunction::LUMA_TO_ALPHA) {
                 output_image = luma_to_alpha(input_image, options.luma_threshold);
+            } else if (options.function == ProcessFunction::LUMA_TO_ALPHA_CUSTOM) {
+                output_image = luma_to_alpha_custom(input_image, options.custom_params);
             } else {
                 output_image = process(input_image, options.function);
             }
