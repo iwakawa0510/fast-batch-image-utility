@@ -1,4 +1,4 @@
-﻿#pragma once
+﻿﻿#pragma once
 
 #include <string>
 #include <vector>
@@ -46,7 +46,7 @@ struct ImageData {
     
     bool is_valid() const {
         return width > 0 && height > 0 && channels > 0 && 
-               pixels.size() == static_cast<size_t>(width * height * channels);
+               pixels.size() == static_cast<size_t>(width) * static_cast<size_t>(height) * static_cast<size_t>(channels);
     }
 };
 

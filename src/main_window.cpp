@@ -1,4 +1,4 @@
-﻿#include "main_window.h"
+﻿﻿#include "main_window.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QFileDialog>
@@ -305,7 +305,7 @@ void MainWindow::execute_batch() {
         
         ImageData output_image;
         if (current_function == ProcessFunction::LUMA_TO_ALPHA) {
-            output_image = ImageProcessor::luma_to_alpha(input_image, 200);
+            output_image = ImageProcessor::luma_to_alpha(input_image, DEFAULT_LUMA_THRESHOLD);
         } else if (current_function == ProcessFunction::LUMA_TO_ALPHA_CUSTOM) {
             output_image = ImageProcessor::luma_to_alpha_custom(input_image, current_custom_params);
         } else {
@@ -329,7 +329,7 @@ void MainWindow::execute_batch() {
         options.input_dir = input_folder.toStdString();
         options.output_dir = output_folder.toStdString();
         options.function = current_function;
-        options.luma_threshold = 200;  // For standard LUMA_TO_ALPHA
+        options.luma_threshold = DEFAULT_LUMA_THRESHOLD;  // For standard LUMA_TO_ALPHA
         options.custom_params = current_custom_params;  // For LUMA_TO_ALPHA_CUSTOM
         options.progress_callback = [this](int completed, int total, const std::string& filename) {
             int progress = (completed * 100) / total;

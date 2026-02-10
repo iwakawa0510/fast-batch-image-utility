@@ -1,4 +1,4 @@
-﻿#include "thread_pool.h"
+﻿﻿#include "thread_pool.h"
 
 namespace fbiu {
 
@@ -59,8 +59,11 @@ void ThreadPool::worker_thread() {
         
         if (task) {
             task();
-            active_tasks--;
-            wait_condition.notify_all();
+            {
+                std::lock_guard<std::mutex> lock(queue_mutex);
+                active_tasks--;
+            }
+            wait_condition.notify_all(); // 待機中のスレッド(例: wait()内)に通知します
         }
     }
 }
