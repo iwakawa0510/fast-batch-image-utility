@@ -28,14 +28,15 @@ include_directories(${CMAKE_SOURCE_DIR}/third_party/stb)
 
 # Compiler flags
 if(MSVC)
-    add_compile_options(/W4 /O2)
-    # Force C++20 standard for MSVC to ensure char8_t is available
-    add_compile_options(/W4 /O2 /std:c++20)
+    # Add /utf-8 to ensure source files are read as UTF-8, regardless of BOM.
+    # This fixes build errors with BOM and allows Japanese comments without it.
+    add_compile_options(/W4 /O2 /std:c++20 /utf-8)
     if(ENABLE_SIMD)
         add_compile_options(/arch:AVX2)
     endif()
 else()
-    add_compile_options(-Wall -Wextra -O3)
+    # For GCC/Clang, -finput-charset=UTF-8 is the equivalent if needed, but it's often the default.
+    add_compile_options(-Wall -Wextra -O3 -finput-charset=UTF-8)
     if(ENABLE_SIMD)
         add_compile_options(-mavx2 -mfma)
     endif()
