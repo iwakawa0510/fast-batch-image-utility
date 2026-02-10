@@ -1,5 +1,4 @@
-﻿﻿#include "thread_pool.h"
-
+﻿#include "thread_pool.h"
 namespace fbiu {
 
 ThreadPool::ThreadPool(size_t num_threads) {

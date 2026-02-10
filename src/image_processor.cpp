@@ -1,4 +1,4 @@
-﻿#include "image_processor.h"
+#include "image_processor.h"
 #include "thread_pool.h"
 
 // Suppress MSVC warnings
