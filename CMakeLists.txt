@@ -88,7 +88,11 @@ if(BUILD_GUI)
         )
     endforeach()
     
+    if(WIN32)
+    add_executable(fbiu_gui WIN32 ${GUI_SOURCES} ${QM_FILES})
+    else()
     add_executable(fbiu_gui ${GUI_SOURCES} ${QM_FILES})
+    endif()
     target_link_libraries(fbiu_gui PRIVATE 
         image_core
         Qt6::Core
